@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Library App</title>
+	<style>
+		#progress {
+			width: 300px;
+			padding: 4px;
+			height: 24px;
+			background-color: #1c1f6b;
+			border-radius: 8px;
+		}
+		#progress-bar {
+			height: 100%;
+			background-color: #5b5eff;
+			border-radius: 8px;
+			transition: width 20s ease;
+		}
+	</style>
+</head>
+<body>
+	<button id="test-button">Start request</button>
+	<p id="status"></p>
+	<div id="progress">
+		<div id="progress-bar" style="width: 0%"></div>
+	</div>
+	<script>
+		const statusP = document.querySelector("#status")
+		const progressBar = document.querySelector("#progress-bar")
+
+		const steps = [
+			"submitQuizResults",
+			"searchGenres",
+			"determineSearchQueries",
+			"retrieveBookList",
+			"determineTopThreeBooks"
+		]
+		
+		async function request(step, threadId, body) {
+			progressBar.style.width = `${(step) / steps.length * 100}%`
+			return await fetch(`/api/step-${step}/${steps[step - 1]}?threadId=${threadId}`, {
+				method: body ? "POST" : "GET",
+				headers: {
+					["Authorization"]: "TEST-API-KEY",
+					["Content-Type"]: body ? "application/json" : undefined
+				},
+				body: body ? JSON.stringify(body) : undefined
+			});
+		}
+		async function getResponseBody(step, response) {
+			if (!response.ok) {
+				alert(`[STEP ${step}] Response was not OK`)
+				console.error(response)
+				throw "Halted execution"
+			}
+
+			let body = await response.json()
+			if (!body.success) {
+				alert(`[STEP ${step}] Response was not successful`)
+				console.error(body)
+				throw "Halted execution"
+			}
+
+			return body;
+		}
+
+		document.querySelector("#test-button").addEventListener("click", async () => {
+			const startTime = (Math.floor(Date.now() / 100) / 10);
+
+			// STEP 1
+			statusP.textContent = "[1] Determining genres from your quiz results...";
+			let response = await request(1, undefined, {
+				"results": [
+					"C", "E", "D", "B", "A", "B", "D", "E", "A", "C", "To go out eating french fries."
+				]
+			})
+			let body = await getResponseBody(1, response);
+
+			const search_id = body.search_id
+			const thread_id = body.thread_id
+
+			// STEP 2
+			statusP.textContent = "[2] Searching up your best genres for books...";
+			response = await request(2, thread_id)
+			body = await getResponseBody(2, response);
+
+			// STEP 3
+			statusP.textContent = "[3] Determining search queries for your books...";
+			response = await request(3, thread_id)
+			body = await getResponseBody(3, response);
+
+			const queries = body.queries
+
+			// STEP 4
+			statusP.textContent = "[4] Obtaining your list of books...";
+			response = await request(4, thread_id, {queries})
+			body = await getResponseBody(4, response);
+
+			const books = body.books;
+
+			// STEP 5
+			statusP.textContent = "[5] Filtering books to find the best fit for you...";
+			response = await request(5, thread_id, {books})
+			body = await getResponseBody(5, response);
+
+			const recommendedBooks = body.books;
+			statusP.textContent = `Completed! Took ${(Math.floor(Date.now() / 100) / 10) - startTime}s to find ${recommendedBooks.length} book(s)`;
+			console.log(recommendedBooks)
+			// progressBar.style.width = `100%`
+		})
+	</script>
+</body>
+</html>

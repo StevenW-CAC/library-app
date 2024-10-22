@@ -1,0 +1,47 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/step-1/submitQuizResults",
+        "function": "submitQuizResults"
+      },
+      {
+        "source": "/api/step-2/searchGenres",
+        "function": "searchGenres"
+      },
+      {
+        "source": "/api/step-3/determineSearchQueries",
+        "function": "determineSearchQueries"
+      },
+      {
+        "source": "/api/step-4/retrieveBookList",
+        "function": "retrieveBookList"
+      },
+      {
+        "source": "/api/step-5/determineTopThreeBooks",
+        "function": "determineTopThreeBooks"
+      }
+    ]
+  }
+}
